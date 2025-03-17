@@ -61,7 +61,6 @@
         }
 
         li {
-            background: #f3f3f3;
             margin: 5px 0;
             padding: 15px;
             display: flex;
@@ -72,13 +71,24 @@
             font-size: 16px;
         }
 
-        li:hover {
-            background: #e0e0e0;
+        .urgent {
+            background: #ff4d4d; /* Rouge */
+            color: white;
+        }
+
+        .medium {
+            background: #ffa500; /* Orange */
+            color: white;
+        }
+
+        .low {
+            background: #4caf50; /* Vert */
+            color: white;
         }
 
         span {
             cursor: pointer;
-            color: red;
+            color: white;
             font-size: 18px;
         }
     </style>
@@ -105,6 +115,8 @@
 
             let li = document.createElement("li");
             let eventLink = createCalendarLink(taskText, taskDateTime);
+            let urgencyClass = getUrgencyClass(taskDateTime);
+            li.classList.add(urgencyClass);
             li.innerHTML = taskText + ' (' + taskDateTime + ') <a href="' + eventLink + '" target="_blank">📅 Ajouter au calendrier</a> <span onclick="removeTask(this)">&times;</span>';
             document.getElementById("taskList").appendChild(li);
 
@@ -121,12 +133,20 @@
             let startTime = eventDate.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
             let endTime = new Date(eventDate.getTime() + 60 * 60 * 1000).toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
             
-            if (/android/i.test(navigator.userAgent)) {
-                return `content://com.android.calendar/events?title=${encodeURIComponent(title)}&dtstart=${eventDate.getTime()}&dtend=${eventDate.getTime() + 60 * 60 * 1000}`;
-            } else if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
-                return `webcal://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${startTime}/${endTime}`;
+            return `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${startTime}/${endTime}`;
+        }
+
+        function getUrgencyClass(dateTime) {
+            let now = new Date();
+            let taskDate = new Date(dateTime);
+            let diffHours = (taskDate - now) / (1000 * 60 * 60);
+
+            if (diffHours <= 3) {
+                return "urgent";
+            } else if (diffHours <= 24) {
+                return "medium";
             } else {
-                return `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${startTime}/${endTime}`;
+                return "low";
             }
         }
     </script>
