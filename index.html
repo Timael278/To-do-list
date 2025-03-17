@@ -29,11 +29,11 @@
 
         .input-group {
             display: flex;
-            gap: 10px;
             flex-direction: column;
+            gap: 10px;
         }
 
-        input {
+        input, button {
             padding: 15px;
             font-size: 16px;
             border: 1px solid #ccc;
@@ -43,16 +43,11 @@
         }
 
         button {
-            padding: 15px;
-            font-size: 16px;
             background: #667eea;
             color: white;
             border: none;
-            border-radius: 5px;
             cursor: pointer;
             transition: background 0.3s;
-            width: 100%;
-            box-sizing: border-box;
         }
 
         button:hover {
@@ -93,6 +88,7 @@
         <h2>To-Do List</h2>
         <div class="input-group">
             <input type="text" id="taskInput" placeholder="Ajouter une tâche...">
+            <input type="datetime-local" id="taskDateTime">
             <button onclick="addTask()">Ajouter</button>
         </div>
         <ul id="taskList"></ul>
@@ -101,19 +97,50 @@
     <script>
         function addTask() {
             let input = document.getElementById("taskInput");
+            let dateTimeInput = document.getElementById("taskDateTime");
             let taskText = input.value.trim();
-            if (taskText === "") return;
+            let taskDateTime = dateTimeInput.value;
+
+            if (taskText === "" || taskDateTime === "") return;
 
             let li = document.createElement("li");
-            li.innerHTML = taskText + ' <span onclick="removeTask(this)">&times;</span>';
+            li.innerHTML = taskText + ' (' + taskDateTime + ') <span onclick="removeTask(this)">&times;</span>';
             document.getElementById("taskList").appendChild(li);
 
+            scheduleNotification(taskText, new Date(taskDateTime));
+
             input.value = "";
+            dateTimeInput.value = "";
         }
 
         function removeTask(element) {
             element.parentElement.remove();
         }
+
+        function scheduleNotification(task, dateTime) {
+            let now = new Date();
+            let delay = dateTime - now;
+
+            if (delay > 0) {
+                setTimeout(() => {
+                    if (Notification.permission === "granted") {
+                        new Notification("Rappel", { body: task });
+                    } else if (Notification.permission !== "denied") {
+                        Notification.requestPermission().then(permission => {
+                            if (permission === "granted") {
+                                new Notification("Rappel", { body: task });
+                            }
+                        });
+                    }
+                }, delay);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            if (Notification.permission !== "granted") {
+                Notification.requestPermission();
+            }
+        });
     </script>
 </body>
 </html>
