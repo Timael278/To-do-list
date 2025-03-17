@@ -104,10 +104,9 @@
             if (taskText === "" || taskDateTime === "") return;
 
             let li = document.createElement("li");
-            li.innerHTML = taskText + ' (' + taskDateTime + ') <span onclick="removeTask(this)">&times;</span>';
+            let eventLink = createCalendarLink(taskText, taskDateTime);
+            li.innerHTML = taskText + ' (' + taskDateTime + ') <a href="' + eventLink + '" target="_blank">📅 Ajouter au calendrier</a> <span onclick="removeTask(this)">&times;</span>';
             document.getElementById("taskList").appendChild(li);
-
-            scheduleNotification(taskText, new Date(taskDateTime));
 
             input.value = "";
             dateTimeInput.value = "";
@@ -117,30 +116,19 @@
             element.parentElement.remove();
         }
 
-        function scheduleNotification(task, dateTime) {
-            let now = new Date();
-            let delay = dateTime - now;
-
-            if (delay > 0) {
-                setTimeout(() => {
-                    if (Notification.permission === "granted") {
-                        new Notification("Rappel", { body: task });
-                    } else if (Notification.permission !== "denied") {
-                        Notification.requestPermission().then(permission => {
-                            if (permission === "granted") {
-                                new Notification("Rappel", { body: task });
-                            }
-                        });
-                    }
-                }, delay);
+        function createCalendarLink(title, dateTime) {
+            let eventDate = new Date(dateTime);
+            let startTime = eventDate.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+            let endTime = new Date(eventDate.getTime() + 60 * 60 * 1000).toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+            
+            if (/android/i.test(navigator.userAgent)) {
+                return `content://com.android.calendar/events?title=${encodeURIComponent(title)}&dtstart=${eventDate.getTime()}&dtend=${eventDate.getTime() + 60 * 60 * 1000}`;
+            } else if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
+                return `webcal://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${startTime}/${endTime}`;
+            } else {
+                return `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${startTime}/${endTime}`;
             }
         }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            if (Notification.permission !== "granted") {
-                Notification.requestPermission();
-            }
-        });
     </script>
 </body>
 </html>
